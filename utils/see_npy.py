@@ -1,6 +1,6 @@
 import numpy as np
 
-data = np.load('breast_datasplit.npy', allow_pickle=True).item()
+data = np.load('breast_data_split.npy', allow_pickle=True).item()
 # print(data)
 
 #

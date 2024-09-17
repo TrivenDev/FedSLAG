@@ -1,4 +1,4 @@
-from unet.unet_model_feat import UNet
+from unet.unet_model_ import UNet
 
 import torch
 import torchvision.transforms as transforms
@@ -6,12 +6,10 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog
 
-# 加载模型
 model = UNet(n_channels=1, n_classes=1,bilinear=True)
-model.load_state_dict(torch.load('log/FedNEW_GMM_bbbl_2024-06-26_08-34-49/BUSIS/epoch294_best_2024-06-26.pth'))
+model.load_state_dict(torch.load('path/to/your/model.pth'))
 model.eval()
 
-# 图像预处理
 preprocess = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.Grayscale(num_output_channels=1),
@@ -28,7 +26,6 @@ def infer_and_show(image_path):
         output = model(input_batch)
         output = torch.sigmoid(output)
 
-    # 转换模型输出为图像
     output_image = output.squeeze(0).cpu().numpy()
     # Ensure output_image is 2D; this part depends on your specific case
     if len(output_image.shape) > 2:
@@ -40,10 +37,7 @@ def infer_and_show(image_path):
     except Exception as e:
         print(f"Error converting output to image: {e}")
         return
-    
-    
-   
-    # 在窗口中显示输入和分割后的图像
+
     root = tk.Tk()
     root.title("Image Viewer")
     input_img = ImageTk.PhotoImage(input_image.resize((224, 224)))
@@ -75,7 +69,7 @@ def infer_and_show(image_path):
 
     root.mainloop()
 
-# 从文件对话框中选择图像
-file_path = "dataset/breast/BUS/original/malignant (115).png"
+
+file_path = "path/to/your/image.png"
 
 infer_and_show(file_path)

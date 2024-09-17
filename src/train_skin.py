@@ -2,14 +2,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 from torch import optim
-from unet.unet_model_feat import UNet
+from unet.unet_model_ import UNet
 from torch.utils.data import Dataset, DataLoader
 
 from IPython.display import clear_output
 from utils.federated_tools import *
 from utils.log_tools import *
 from utils.SPB.tools import *
-from configs.skin.FedSLAG import *
+from configs.skin.config import *
 # %%
 
 for client in skin_dataset:
@@ -44,7 +44,7 @@ best_avg_acc, best_epoch = 0.0, 0
 training_clients, testing_clients = dict(), dict()
 training_clients_pl = dict()
 
-acc_train, acc_test, loss_train, loss_test = dict(), dict(), \
+acc_train, acc_val, loss_train, loss_test = dict(), dict(), \
     dict(), dict()
 
 nets, optimizers = dict(), dict()
@@ -64,9 +64,9 @@ for client in CLIENTS:
                                             num_workers=8)
     testing_loader[client] = DataLoader(split_dataset[client + '_test'], batch_size=1,
                                         shuffle=False, num_workers=1)
-    acc_train[client], acc_test[client] = [], []
+    acc_train[client], acc_val[client] = [], []
     loss_train[client], loss_test[client] = [], []
-    acc_test_local[client], loss_test_local[client] = [], []
+    acc_val_local[client], loss_test_local[client] = [], []
 
     nets[client] = UNet(n_channels=N_CHANNELS, n_classes=N_CLASSES, bilinear=True).to(DEVICE)
     nets_2[client] = UNet(n_channels=N_CHANNELS, n_classes=N_CLASSES, bilinear=True).to(DEVICE)
@@ -166,25 +166,23 @@ for epoch in range(EPOCHS):
         fed_aggr(CLIENTS, WEIGHTS, nets, fed_name='global')
         fed_aggr(CLIENTS_2, WEIGHTS, nets_2, fed_name='global')
 
-
-
     avg_acc = 0.0
     for client in CLIENTS:
 
-        test(epoch, testing_loader[client], nets['global'], DEVICE, acc_test[client],
-             loss_test[client])
-        avg_acc += acc_test[client][-1]
+        val(epoch, testing_loader[client], nets['global'], DEVICE, acc_val[client],
+            loss_test[client])
+        avg_acc += acc_val[client][-1]
     avg_acc = avg_acc / TOTAL_CLIENTS
 
     avg_acc_local = 0.0
     for client in CLIENTS:
 
-        test_local(epoch, testing_loader[client], nets[client], DEVICE, acc_test_local[client],
-             loss_test_local[client])
-        avg_acc_local += acc_test_local[client][-1]
+        val_local(epoch, testing_loader[client], nets[client], DEVICE, acc_val_local[client],
+                  loss_test_local[client])
+        avg_acc_local += acc_val_local[client][-1]
     avg_acc_local = avg_acc_local / TOTAL_CLIENTS
 
-    if check_acc_test(acc_test, 0.50) and check_acc_test(acc_test_local, 0.50) and step2_flag == False:
+    if check_acc_val(acc_val, 0.50) and check_acc_val(acc_val_local, 0.50) and step2_flag == False:
         print("\nSTEP 2 >",epoch)
         step2_flag = True
 
@@ -201,16 +199,16 @@ for epoch in range(EPOCHS):
           acc_train['VIDIR_MOLEMAX'][-1])
     print('Epoch:', epoch, '|', 'loss_train:', loss_train['ROSENDAHL'][-1], '|',loss_train['VIDIR_MODERN'][-1], '|', loss_train['VIENNA_DIAS'][-1], '|',
           loss_train['VIDIR_MOLEMAX'][-1])
-    print('Epoch:', epoch, '|', 'global_test:', acc_test['ROSENDAHL'][-1], '|', acc_test['VIDIR_MODERN'][-1], '|', acc_test['VIENNA_DIAS'][-1], '|',
-          acc_test['VIDIR_MOLEMAX'][-1])
-    print('Epoch:', epoch, '|', 'local_test:',acc_test_local['ROSENDAHL'][-1], '|', acc_test_local['VIDIR_MODERN'][-1], '|', acc_test_local['VIENNA_DIAS'][-1], '|',
-          acc_test_local['VIDIR_MOLEMAX'][-1])
+    print('Epoch:', epoch, '|', 'global_test:', acc_val['ROSENDAHL'][-1], '|', acc_val['VIDIR_MODERN'][-1], '|', acc_val['VIENNA_DIAS'][-1], '|',
+          acc_val['VIDIR_MOLEMAX'][-1])
+    print('Epoch:', epoch, '|', 'local_test:', acc_val_local['ROSENDAHL'][-1], '|', acc_val_local['VIDIR_MODERN'][-1], '|', acc_val_local['VIENNA_DIAS'][-1], '|',
+          acc_val_local['VIDIR_MOLEMAX'][-1])
     print(f"Epoch {epoch} cost {time.time() - start_time :.2f} seconds")
     print("===================================================================")
     
 
     acc_avg, loss_avg = 0, 0
-    save_data_to_file(CLIENTS, acc_test,loss_train, SAVE_LOG_PATH + '/' + LOG_FILE_NAME)
+    save_data_to_file(CLIENTS, acc_val, loss_train, SAVE_LOG_PATH + '/' + LOG_FILE_NAME)
 
 
 
@@ -225,12 +223,12 @@ plt.savefig(SAVE_LOG_PATH + '/' + 'train_acc_curve.png')
 # plt.show()
 
 plt.figure(1)
-plt.plot(index, acc_test['ROSENDAHL'], colors[0], label='ROSENDAHL test',linewidth = linewidth)
-plt.plot(index, acc_test['VIDIR_MODERN'], colors[1], label='VIDIR_MODERN test',linewidth = linewidth)
-plt.plot(index, acc_test['VIENNA_DIAS'], colors[2], label='VIENNA_DIAS test',linewidth = linewidth)
-plt.plot(index, acc_test['VIDIR_MOLEMAX'], colors[3], label='VIDIR_MOLEMAX test',linewidth = linewidth)
-plt.plot(index, [(a+b+c+d) / 4 for a,b,c,d in zip(acc_test['VIDIR_MOLEMAX'], acc_test['ROSENDAHL'],acc_test['VIDIR_MODERN'],acc_test['VIENNA_DIAS'])],
-         colors[4], label='global test',linewidth = 1)
+plt.plot(index, acc_val['ROSENDAHL'], colors[0], label='ROSENDAHL test', linewidth = linewidth)
+plt.plot(index, acc_val['VIDIR_MODERN'], colors[1], label='VIDIR_MODERN test', linewidth = linewidth)
+plt.plot(index, acc_val['VIENNA_DIAS'], colors[2], label='VIENNA_DIAS test', linewidth = linewidth)
+plt.plot(index, acc_val['VIDIR_MOLEMAX'], colors[3], label='VIDIR_MOLEMAX test', linewidth = linewidth)
+plt.plot(index, [(a+b+c+d) / 4 for a,b,c,d in zip(acc_val['VIDIR_MOLEMAX'], acc_val['ROSENDAHL'], acc_val['VIDIR_MODERN'], acc_val['VIENNA_DIAS'])],
+         colors[4], label='global test', linewidth = 1)
 plt.grid(True)
 plt.legend()
 plt.savefig(SAVE_LOG_PATH + '/' + 'test_acc_curve.png')
@@ -238,12 +236,12 @@ plt.savefig(SAVE_LOG_PATH + '/' + 'test_acc_curve.png')
 
 # 绘制本地准确度曲线
 plt.figure(2)
-plt.plot(index, acc_test_local['ROSENDAHL'], colors[0], label='ROSENDAHL local test',linewidth = linewidth)
-plt.plot(index, acc_test_local['VIDIR_MODERN'], colors[1], label='VIDIR_MODERN local test',linewidth = linewidth)
-plt.plot(index, acc_test_local['VIENNA_DIAS'], colors[2], label='VIENNA_DIAS local test',linewidth = linewidth)
-plt.plot(index, acc_test_local['VIDIR_MOLEMAX'], colors[3], label='UDIAT local test',linewidth = linewidth)
-plt.plot(index, [(a+b+c+d) / 4 for a,b,c,d in zip(acc_test_local['VIDIR_MOLEMAX'], acc_test_local['ROSENDAHL'],acc_test_local['VIDIR_MODERN'],acc_test_local['VIENNA_DIAS'])],
-          colors[4], label='global test',linewidth = 1)
+plt.plot(index, acc_val_local['ROSENDAHL'], colors[0], label='ROSENDAHL local test', linewidth = linewidth)
+plt.plot(index, acc_val_local['VIDIR_MODERN'], colors[1], label='VIDIR_MODERN local test', linewidth = linewidth)
+plt.plot(index, acc_val_local['VIENNA_DIAS'], colors[2], label='VIENNA_DIAS local test', linewidth = linewidth)
+plt.plot(index, acc_val_local['VIDIR_MOLEMAX'], colors[3], label='UDIAT local test', linewidth = linewidth)
+plt.plot(index, [(a+b+c+d) / 4 for a,b,c,d in zip(acc_val_local['VIDIR_MOLEMAX'], acc_val_local['ROSENDAHL'], acc_val_local['VIDIR_MODERN'], acc_val_local['VIENNA_DIAS'])],
+         colors[4], label='global test', linewidth = 1)
 plt.grid(True)
 plt.legend()
 
@@ -257,8 +255,8 @@ for client in CLIENTS:
     best_epoch = best_epoch
 
     print(f"##{client}##")
-    print("Shared epoch specific:", acc_test[client][best_epoch])
-    print("Max client-specific:", np.max(acc_test[client]))
+    print("Shared epoch specific:", acc_val[client][best_epoch])
+    print("Max client-specific:", np.max(acc_val[client]))
     best_epoch = tmp
 
 

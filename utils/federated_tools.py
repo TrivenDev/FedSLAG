@@ -13,7 +13,7 @@ from torch.utils.data import Dataset
 
 
 from dice_loss import dice_coeff
-from configs.breast.FedSLAG import EPOCHS as TOTAL_EPOCHS
+from configs.breast.config import EPOCHS as TOTAL_EPOCHS
 
 import random
 from utils.LGE.tools import *
@@ -224,7 +224,7 @@ def select_pl(nets_1, nets_2, device, trainloader, im_store, y_store, \
 
     return counter, dice_acc
 
-def test(epoch, testloader, net,  device, acc=None, loss=None):
+def val(epoch, testloader, net, device, acc=None, loss=None):
     net.eval()
     net = net.to(device)
 
@@ -255,7 +255,7 @@ def test(epoch, testloader, net,  device, acc=None, loss=None):
         del t_acc, t_loss
 
 
-def test_local(epoch,client, testloader, net,  device, acc=None, loss=None, net_history=None,local_best_acc=None):
+def val_local(epoch, client, testloader, net, device, acc=None, loss=None, net_history=None, local_best_acc=None):
 
     net.eval()
     net = net.to(device)

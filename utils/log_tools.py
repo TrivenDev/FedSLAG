@@ -137,7 +137,7 @@ def save_model(PTH, epoch, nets, acc_train, isbest=False):
         torch.save(nets[client].state_dict(), savepath)
 
 
-def check_acc_test(acc_test, acc_test_threshold):
+def check_acc_val(acc_test, acc_test_threshold):
     for client, acc_list in acc_test.items():
         latest_acc = acc_list[-1]
         if latest_acc <= acc_test_threshold:
