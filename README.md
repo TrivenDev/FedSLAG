@@ -1,4 +1,4 @@
-# HSFL for Universal Medical Image Segmentation
+# A Federated Hybrid-Supervised Learning for Medical Image Segmentation with Heterogeneous Annotation Guidance
 
 This repository is the official implementation of [Federated Hybrid-Supervised Learning for Universal
 Medical Image Segmentation](https://github.com). 
