@@ -1,7 +1,7 @@
 # A Federated Hybrid-Supervised Learning for Medical Image Segmentation with Heterogeneous Annotation Guidance
 
 This repository is the official implementation of [Federated Hybrid-Supervised Learning for Universal
-Medical Image Segmentation](https://github.com). 
+Medical Image Segmentation](https://ieeexplore.ieee.org/document/10887826). 
 
 >FL faces difficulties with heterogeneous data and limited annotations in medical image segmentation. Motivated by this discovery, this study proposes a hybrid-supervised federated learning method that explores various types of annotations in medical imaging.
 >
